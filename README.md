@@ -14,7 +14,7 @@ Server
 ### Install
 
     wget --no-check-certificate https://raw.githubusercontent.com/clangcn/kcp-server/socks5/install-kcptun-server.sh -O ./install-kcptun-server.sh
-    chmod 500 ./install-kcptun-server.sh
+    chmod 755 ./install-kcptun-server.sh
     ./install-kcptun-server.sh install
 
 ### UnInstall
