@@ -14,8 +14,9 @@ program_name="kcp-server"
 kcp_init="/etc/init.d/${program_name}"
 program_config_file="server-kcptun.json"
 program_download_url="https://github.com/xtaci/kcptun/releases/download"
-program_socks5_download="https://github.com/clangcn/kcp-server/raw/socks5/latest"
+program_socks5_download="https://github.com/clangcn/kcp-server/blob/socks5/socks5_latest"
 program_socks5_filename="socks5"
+socks_md5sum_file=md5sum.md
 program_init_download_url=https://raw.githubusercontent.com/clangcn/kcp-server/socks5/kcptun-server.init
 str_install_shell=https://raw.githubusercontent.com/clangcn/kcp-server/socks5/install-kcptun-server.sh
 
@@ -259,6 +260,13 @@ function check_killall(){
     fi
     echo $result
 }
+function check_md5sum(){
+    md5sum --version >/dev/null
+    if [[ $? -gt 6 ]] ;then
+        echo " Run md5sum failed"
+    fi
+    echo $result
+}
 # Random password
 function fun_randstr(){
   index=0
@@ -314,6 +322,13 @@ function fun_download_file(){
                 echo "Failed to download ${kcptun_latest_filename} file!"
                 exit 1
             fi
+            check_md5sum
+            kcptun_md5_web=`curl -s ${kcptun_latest_release} | sed -n '/MD5 (kcptun-linux-'${ARCHS}'/p' | cut -d"=" -f2 | sed s/[[:space:]]//g`
+            down_local_md5=`md5sum ${kcptun_latest_filename} | awk '{print $1}'`
+            if [ "${down_local_md5}" != "${kcptun_md5_web}" ]; then
+                echo "md5sum not match,Failed to download ${kcptun_latest_filename} file!"
+                exit 1
+            fi
             tar xzvf ${kcptun_latest_filename}
             mv server_linux_${ARCHS} ${str_program_dir}/${program_name}
             rm -f ${kcptun_latest_filename} client_linux_${ARCHS}
@@ -323,6 +338,12 @@ function fun_download_file(){
     if [ ! -s ${str_program_dir}/${program_socks5_filename} ]; then
         if ! wget --no-check-certificate ${program_socks5_download}/socks5_linux_${ARCHS} -O ${str_program_dir}/${program_socks5_filename}; then
             echo "Failed to download socks5_linux_${ARCHS} file!"
+            exit 1
+        fi
+        socks5_md5_web=`curl -s ${program_socks5_download}/${socks_md5sum_file} | sed  -n "/socks5_linux_${ARCHS}/p" | awk '{print $1}'`
+        socks5_local_md5=`md5sum ${str_program_dir}/${program_socks5_filename} | awk '{print $1}'`
+        if [ "${socks5_local_md5}" != "${socks5_md5_web}" ]; then
+            echo "md5sum not match,Failed to download ${program_socks5_filename} file!"
             exit 1
         fi
     fi
@@ -753,4 +774,3 @@ update)
     echo "Usage: `basename $0` {install|uninstall|update|config}"
     ;;
 esac
-
